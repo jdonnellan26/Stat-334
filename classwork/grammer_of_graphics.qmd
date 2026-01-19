@@ -1,0 +1,91 @@
+---
+title: "grammer_of_graphics"
+format: html
+---
+
+```{r}
+install.packages("palmerpenguins")
+library(palmerpenguins)
+library(tidyverse)
+theme_set(theme_minimal())
+penguins
+
+## single quantitative frequency plot
+ggplot(data = penguins, aes(x = bill_length_mm)) +
+  geom_freqpoly() 
+```
+
+```{r}
+## single categorical variable
+ggplot(data = penguins, aes(x = species )) +
+  geom_bar(colour = "mediumpurple4", fill = "mediumpurple1")
+
+penguins_sum <- penguins |>
+  group_by(species) |>
+  summarise(
+    n = n()
+  )
+
+ggplot(data = penguins_sum, aes(x = species, y = n) +
+         geom_bar(stat = "identity"))
+
+  
+
+```
+
+```{r}
+ggplot(data = penguins, aes(x = species, fill = sex)) +
+  geom_bar(position = "stack") + ## don't need "stack" because it's default
+  scale_fill_viridis_d()
+```
+
+Exercise #1
+
+```{r}
+ggplot(data = penguins, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(stat = "identity", position = "identity")+
+  facet_null()+
+  coord_cartesian()
+```
+
+Excerise #6
+
+```{r}
+library(tidyverse)
+df <- read_csv("https://raw.githubusercontent.com/highamm/ds234_quarto/main/data_online/slu_graduates.csv") 
+
+## fixes error in the data
+df <- df |> mutate(across(everything(),
+                          .fns = ~replace(., . ==  "STATS" , "STAT")))
+
+## turns the data set from 1 row per graduating student
+## to 1 row per major-minor combination so that students
+## with more than one major-minor combo take up multiple
+## rows
+df_major_minor <- df |> filter(!is.na(minor1)) |> 
+  pivot_longer(starts_with("major"), names_to = "major_number",
+               values_to = "major") |>
+  filter(!is.na(major)) |>
+  pivot_longer(starts_with("minor"), names_to = "minor_number",
+               values_to = "minor") |>
+  filter(!is.na(minor))
+```
+
+```{r}
+major_minor_15 <- df_major_minor |>
+  group_by(major, minor) |>
+  summarize(
+    count = n()) |>
+  ungroup() |>
+  arrange(desc(count)) |>
+  slice(1:15) |>
+  unite("major_minor", c(major,minor), sep = "-") |>
+  mutate(major_minor = fct_reorder(major_minor, count))
+
+ggplot(data = major_minor_15, aes(x = count, y = major_minor)) +
+  geom_bar(stat = "identity", position = "identity") +
+  coord_cartesian() +
+  facet_null()
+  
+
+```
